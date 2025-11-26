@@ -243,7 +243,7 @@ pub fn compute_line_point(
     });
 
     let x = point.x_position * scale * screen_width + canvas_x;
-    let y = -(point_fp - canvas_fp) * screen_height * game_state.speed * scale;
+    let y = (point_fp - canvas_fp) * screen_height * game_state.speed * scale;
 
     let mix_color = calculate_mixed_color(tick, &point.color, line_color);
 

@@ -11,13 +11,13 @@ pub const JUDGE_RING_LINE_WIDTH: f32 = 5.0;
 use crate::easing::apply_ease;
 use crate::game::{
     calculate_mixed_color, compute_line_point, get_current_judge_ring_color, update_canvas_states,
-    ComputedLinePoint, GameState, NoteState,
+    GameState, NoteState,
 };
 use crate::timing::{speed_to_fp, tick_to_seconds};
 
 /// Window configuration
-pub const WINDOW_WIDTH: f32 = 1080.0;
-pub const WINDOW_HEIGHT: f32 = 1920.0;
+pub const WINDOW_WIDTH: f32 = 565.0;
+pub const WINDOW_HEIGHT: f32 = 710.0;
 #[allow(dead_code)]
 pub const ASPECT_RATIO: f32 = WINDOW_WIDTH / WINDOW_HEIGHT;
 
@@ -157,11 +157,6 @@ fn update_rendering(
                 screen_height as f64,
             );
 
-            // Skip if off screen
-            if computed.y < -screen_height as f64 * 2.0 {
-                continue;
-            }
-
             // Draw line segment to next point
             if i + 1 < line_points.len() {
                 let next_point = &line_points[i + 1];
@@ -181,19 +176,65 @@ fn update_rendering(
                 );
 
                 // Skip if completely off screen
-                if next_computed.y > screen_height as f64 * 2.0 {
+                // If start is above top margin, whole segment is above
+                if computed.y > screen_height as f64 * 2.0 {
+                    continue;
+                }
+                // If end is below bottom margin, whole segment is below
+                if next_computed.y < -screen_height as f64 * 2.0 {
                     continue;
                 }
 
-                // Draw line segment
-                draw_line_segment(
-                    &mut commands,
-                    &mut meshes,
-                    &mut materials,
-                    &computed,
-                    &next_computed,
-                    scale,
-                );
+                // Draw line segment with easing
+                let steps = 10;
+                let mut prev_pos = Vec2::new(computed.x as f32, computed.y as f32);
+                let mut prev_color = computed.color.to_bevy_color();
+
+                for s in 1..=steps {
+                    let t = s as f32 / steps as f32;
+                    let ease_val = apply_ease(point.ease_type, t) as f64;
+                    
+                    let current_time = point.time + (next_point.time - point.time) * t as f64;
+                    let current_chart_x = point.x_position + (next_point.x_position - point.x_position) * ease_val;
+                    
+                    let current_seconds = tick_to_seconds(current_time, &game_state.chart.bpm_shifts, game_state.chart.bpm);
+                    let current_fp = speed_to_fp(
+                        current_seconds,
+                        &game_state.chart.canvas_moves[point.canvas_index].speed_key_points,
+                        &game_state.chart.bpm_shifts,
+                        game_state.chart.bpm,
+                    );
+                    
+                    let current_screen_x = current_chart_x * scale as f64 * screen_width as f64 + canvas_x as f64;
+                    let current_screen_y = (current_fp - canvas_fp) * screen_height as f64 * game_state.speed * scale as f64;
+                    
+                    let current_pos = Vec2::new(current_screen_x as f32, current_screen_y as f32);
+                    let mixed_color = calculate_mixed_color(current_time, &point.color, line_color).to_bevy_color();
+
+                    let dx = current_pos.x - prev_pos.x;
+                    let dy = current_pos.y - prev_pos.y;
+                    let length = (dx * dx + dy * dy).sqrt();
+                    
+                    if length >= 0.1 {
+                        let angle = dy.atan2(dx);
+                        let mid_x = (prev_pos.x + current_pos.x) / 2.0;
+                        let mid_y = (prev_pos.y + current_pos.y) / 2.0;
+                        
+                        commands.spawn((
+                            MaterialMesh2dBundle {
+                                mesh: meshes.add(Rectangle::new(length, 3.0 * scale)).into(),
+                                material: materials.add(prev_color),
+                                transform: Transform::from_xyz(mid_x, mid_y, 1.0)
+                                    .with_rotation(Quat::from_rotation_z(angle)),
+                                ..default()
+                            },
+                            GameEntity,
+                        ));
+                    }
+                    
+                    prev_pos = current_pos;
+                    prev_color = mixed_color;
+                }
             }
 
             // Draw judge ring if within time range
@@ -300,7 +341,7 @@ fn update_rendering(
             let note_y = if note.note_type == 2 && tick >= note.time {
                 0.0
             } else {
-                -(note_fp - canvas_state.fp) * screen_height as f64 * game_state.speed * scale as f64
+                (note_fp - canvas_state.fp) * screen_height as f64 * game_state.speed * scale as f64
             };
 
             // Check if note should be hit
@@ -354,7 +395,7 @@ fn update_rendering(
                         );
 
                         let end_canvas = &game_state.canvas_states[end_canvas_idx];
-                        let end_y = (end_canvas.fp - end_fp) * screen_height as f64 * game_state.speed * scale as f64;
+                        let end_y = (end_fp - end_canvas.fp) * screen_height as f64 * game_state.speed * scale as f64;
                         let height = (end_y - note_y) as f32;
 
                         draw_hold_body(
@@ -405,39 +446,6 @@ fn find_line_points_for_time<'a>(
     (point, next_point)
 }
 
-fn draw_line_segment(
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<ColorMaterial>>,
-    start: &ComputedLinePoint,
-    end: &ComputedLinePoint,
-    scale: f32,
-) {
-    let dx = end.x - start.x;
-    let dy = end.y - start.y;
-    let length = ((dx * dx + dy * dy) as f32).sqrt();
-
-    if length < 0.1 {
-        return;
-    }
-
-    let angle = (dy as f32).atan2(dx as f32);
-    let mid_x = (start.x + end.x) / 2.0;
-    let mid_y = (start.y + end.y) / 2.0;
-
-    let color = start.color.to_bevy_color();
-
-    commands.spawn((
-        MaterialMesh2dBundle {
-            mesh: meshes.add(Rectangle::new(length, 3.0 * scale)).into(),
-            material: materials.add(color),
-            transform: Transform::from_xyz(mid_x as f32, mid_y as f32, 1.0)
-                .with_rotation(Quat::from_rotation_z(angle)),
-            ..default()
-        },
-        GameEntity,
-    ));
-}
 
 fn draw_judge_ring(
     commands: &mut Commands,

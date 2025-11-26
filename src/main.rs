@@ -56,8 +56,9 @@ fn setup(mut commands: Commands) {
     commands.insert_resource(game_state);
 
     // Setup 2D camera with offset for game coordinate system
+    // Offset calculation: 200 * (WINDOW_HEIGHT / 640.0) = 284.375
     commands.spawn(Camera2dBundle {
-        transform: Transform::from_xyz(0.0, -200.0 * (WINDOW_HEIGHT / 640.0), 0.0),
+        transform: Transform::from_xyz(0.0, 284.375, 0.0),
         ..default()
     });
 
