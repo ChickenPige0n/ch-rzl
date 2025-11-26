@@ -124,9 +124,3 @@ pub fn apply_ease(ease_type: u8, t: f32) -> f32 {
     let ease_fn = get_ease_func(ease_type);
     ease_fn(t.clamp(0.0, 1.0))
 }
-
-/// Linear interpolation
-#[allow(dead_code)]
-pub fn lerp(start: f32, end: f32, t: f32) -> f32 {
-    start + (end - start) * t
-}

@@ -2,6 +2,12 @@ use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
 
 use crate::chart::Color as ChartColor;
+
+/// Default white color constant
+pub const WHITE_COLOR: ChartColor = ChartColor { r: 255, g: 255, b: 255, a: 255 };
+
+/// Line width for judge ring
+pub const JUDGE_RING_LINE_WIDTH: f32 = 5.0;
 use crate::easing::apply_ease;
 use crate::game::{
     calculate_mixed_color, compute_line_point, get_current_judge_ring_color, update_canvas_states,
@@ -312,7 +318,7 @@ fn update_rendering(
 
             // Get note color
             let note_color = if note.note_type == 1 {
-                ChartColor { r: 255, g: 255, b: 255, a: 255 }
+                WHITE_COLOR
             } else {
                 game_state.get_theme_color(1)
             };
@@ -446,7 +452,7 @@ fn draw_judge_ring(
 
     // Draw ring as 4 rectangles (top, bottom, left, right)
     let half_size = size / 2.0;
-    let line_width = 5.0;
+    let line_width = JUDGE_RING_LINE_WIDTH;
 
     // Top
     commands.spawn((
