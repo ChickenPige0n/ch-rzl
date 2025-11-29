@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::sprite::MaterialMesh2dBundle;
 
 use crate::chart::Color as ChartColor;
 
@@ -96,7 +95,7 @@ fn update_game_time(
     mut game_state: ResMut<GameState>,
 ) {
     if game_state.is_playing {
-        game_state.current_time += time.delta_seconds_f64();
+        game_state.current_time += time.delta_secs_f64();
     }
 }
 
@@ -221,13 +220,10 @@ fn update_rendering(
                         let mid_y = (prev_pos.y + current_pos.y) / 2.0;
                         
                         commands.spawn((
-                            MaterialMesh2dBundle {
-                                mesh: meshes.add(Rectangle::new(length, 3.0 * scale)).into(),
-                                material: materials.add(prev_color),
-                                transform: Transform::from_xyz(mid_x, mid_y, 1.0)
-                                    .with_rotation(Quat::from_rotation_z(angle)),
-                                ..default()
-                            },
+                            Mesh2d(meshes.add(Rectangle::new(length, 3.0 * scale))),
+                            MeshMaterial2d(materials.add(prev_color)),
+                            Transform::from_xyz(mid_x, mid_y, 1.0)
+                                .with_rotation(Quat::from_rotation_z(angle)),
                             GameEntity,
                         ));
                     }
@@ -464,45 +460,33 @@ fn draw_judge_ring(
 
     // Top
     commands.spawn((
-        MaterialMesh2dBundle {
-            mesh: meshes.add(Rectangle::new(size, line_width)).into(),
-            material: materials.add(bevy_color),
-            transform: Transform::from_xyz(x, y + half_size, 2.0),
-            ..default()
-        },
+        Mesh2d(meshes.add(Rectangle::new(size, line_width))),
+        MeshMaterial2d(materials.add(bevy_color)),
+        Transform::from_xyz(x, y + half_size, 2.0),
         GameEntity,
     ));
 
     // Bottom
     commands.spawn((
-        MaterialMesh2dBundle {
-            mesh: meshes.add(Rectangle::new(size, line_width)).into(),
-            material: materials.add(bevy_color),
-            transform: Transform::from_xyz(x, y - half_size, 2.0),
-            ..default()
-        },
+        Mesh2d(meshes.add(Rectangle::new(size, line_width))),
+        MeshMaterial2d(materials.add(bevy_color)),
+        Transform::from_xyz(x, y - half_size, 2.0),
         GameEntity,
     ));
 
     // Left
     commands.spawn((
-        MaterialMesh2dBundle {
-            mesh: meshes.add(Rectangle::new(line_width, size)).into(),
-            material: materials.add(bevy_color),
-            transform: Transform::from_xyz(x - half_size, y, 2.0),
-            ..default()
-        },
+        Mesh2d(meshes.add(Rectangle::new(line_width, size))),
+        MeshMaterial2d(materials.add(bevy_color)),
+        Transform::from_xyz(x - half_size, y, 2.0),
         GameEntity,
     ));
 
     // Right
     commands.spawn((
-        MaterialMesh2dBundle {
-            mesh: meshes.add(Rectangle::new(line_width, size)).into(),
-            material: materials.add(bevy_color),
-            transform: Transform::from_xyz(x + half_size, y, 2.0),
-            ..default()
-        },
+        Mesh2d(meshes.add(Rectangle::new(line_width, size))),
+        MeshMaterial2d(materials.add(bevy_color)),
+        Transform::from_xyz(x + half_size, y, 2.0),
         GameEntity,
     ));
 }
@@ -519,23 +503,17 @@ fn draw_note(
     let bevy_color = color.to_bevy_color();
 
     commands.spawn((
-        MaterialMesh2dBundle {
-            mesh: meshes.add(Rectangle::new(size, size)).into(),
-            material: materials.add(bevy_color),
-            transform: Transform::from_xyz(x, y, 3.0),
-            ..default()
-        },
+        Mesh2d(meshes.add(Rectangle::new(size, size))),
+        MeshMaterial2d(materials.add(bevy_color)),
+        Transform::from_xyz(x, y, 3.0),
         GameEntity,
     ));
 
     // Draw border
     commands.spawn((
-        MaterialMesh2dBundle {
-            mesh: meshes.add(Rectangle::new(size + 3.0, size + 3.0)).into(),
-            material: materials.add(Color::BLACK),
-            transform: Transform::from_xyz(x, y, 2.9),
-            ..default()
-        },
+        Mesh2d(meshes.add(Rectangle::new(size + 3.0, size + 3.0))),
+        MeshMaterial2d(materials.add(Color::BLACK)),
+        Transform::from_xyz(x, y, 2.9),
         GameEntity,
     ));
 }
@@ -553,12 +531,9 @@ fn draw_hold_body(
     let bevy_color = color.to_bevy_color();
 
     commands.spawn((
-        MaterialMesh2dBundle {
-            mesh: meshes.add(Rectangle::new(width, height.abs())).into(),
-            material: materials.add(bevy_color),
-            transform: Transform::from_xyz(x, y + height / 2.0, 2.5),
-            ..default()
-        },
+        Mesh2d(meshes.add(Rectangle::new(width, height.abs()))),
+        MeshMaterial2d(materials.add(bevy_color)),
+        Transform::from_xyz(x, y + height / 2.0, 2.5),
         GameEntity,
     ));
 }
