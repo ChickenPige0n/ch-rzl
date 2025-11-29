@@ -17,7 +17,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "CH-RZL Player".to_string(),
-                resolution: (WINDOW_WIDTH, WINDOW_HEIGHT).into(),
+                resolution: (WINDOW_WIDTH as u32, WINDOW_HEIGHT as u32).into(),
                 resizable: true,
                 mode: WindowMode::Windowed,
                 ..default()
@@ -57,22 +57,19 @@ fn setup(mut commands: Commands) {
 
     // Setup 2D camera with offset for game coordinate system
     // Offset calculation: 200 * (WINDOW_HEIGHT / 640.0) = 284.375
-    commands.spawn(Camera2dBundle {
-        transform: Transform::from_xyz(0.0, 284.375, 0.0),
-        ..default()
-    });
+    commands.spawn((
+        Camera2d,
+        Transform::from_xyz(0.0, 284.375, 0.0),
+    ));
 
     // Spawn background
     commands.spawn((
-        SpriteBundle {
-            sprite: Sprite {
-                color: Color::WHITE,
-                custom_size: Some(Vec2::new(WINDOW_WIDTH * 2.0, WINDOW_HEIGHT * 2.0)),
-                ..default()
-            },
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
+        Sprite {
+            color: Color::WHITE,
+            custom_size: Some(Vec2::new(WINDOW_WIDTH * 2.0, WINDOW_HEIGHT * 2.0)),
             ..default()
         },
+        Transform::from_xyz(0.0, 0.0, 0.0),
         Background,
     ));
 
